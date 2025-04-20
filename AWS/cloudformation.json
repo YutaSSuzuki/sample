@@ -1,0 +1,91 @@
+{
+    "AWSTemplateFormatVersion" : "2010-09-09",
+    "Description" : "A sample template for ssm",
+    "Resources" : {
+        "kenshou_vpc": {
+          "Type": "AWS::EC2::VPC",
+          "Properties": {
+            "CidrBlock": "10.0.0.0/24",
+            "EnableDnsSupport" : "true",
+            "EnableDnsHostnames" : "true",
+            "Tags": [{"key":"Name","value":"kenshou_vpc"}]
+          }
+        },
+        "kenshou_IGW": {
+          "Type": "AWS::EC2::InternetGateway",
+          "Properties": {
+            "Tags": [{"key":"Name","value":"kenshou_IGW"}]
+          }
+        },
+        "AttachGateway": {
+          "Type": "AWS::EC2::VPCGatewayAttachment",
+          "Properties": {
+            "VpcId": {"Ref":"kenshou_vpc"},
+            "InternetGatewayId": { "Ref": "kenshou_IGW" }
+          }
+        },
+        "kenshou_pub_rt": {
+          "Type": "AWS::EC2::RouteTable",
+          "Properties": {
+            "VpcId": {"Ref":"kenshou_vpc"},
+            "Tags": [{"key":"Name","Value":"kenshou_pub_rt"}]
+          }
+        },
+        
+        "kenshou_pub_route": {
+          "Type": "AWS::EC2::Route",
+          "Properties": {
+            "RouteTableId": {"Ref":"kenshou_pub_rt"},
+            "DestinationCidrBlock": "0.0.0.0/0",
+            "GatewayId": {"Ref":"kenshou_IGW"}
+          }
+        },
+        "AttachIGW" : {
+            "Type" : "AWS::EC2::VPCGatewayAttachment",
+            "Properties" : {
+            "InternetGatewayId" : { "Ref" : "kenshou_IGW" },
+            "VpcId" : { "Ref" : "kenshou_vpc" }
+            }
+        },
+        "kenshou_public_subnet": {
+          "Type": "AWS::EC2::Subnet",
+          "Properties": {
+            "AvailabilityZone": "ap-northeast-1a",
+            "VpcId": {"Ref":"kenshou_vpc"},
+            "CidrBlock": "10.0.0.0/28",
+            "Tags": [{"key":"Name","Value":"kenshou_public_subnet"}]
+          }
+        },
+        "SubnetRouteTableAssociation" : {
+             "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+             "Properties" : {
+            "SubnetId" : { "Ref" : "kenshou_public_subnet" },
+             "RouteTableId" : { "Ref" : "kenshou_pub_rt" }
+         }
+        },
+        "kenshou_SG" : {
+            "Type" : "AWS::EC2::SecurityGroup",
+            "Properties" : {
+                "VpcId" : { "Ref" : "kenshou_vpc" },
+                "GroupDescription" : "kenshou_IGW",
+                "SecurityGroupIngress" : [
+                { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "0.0.0.0/0" },
+                ],
+                "Tags" : [ {"Key" : "Name", "Value" : "kenshou_SG"}]
+            }
+        },
+        "kenshou_ec2" : {
+        "Type" : "AWS::EC2::Instance",
+        "Properties" : {
+        "AvailabilityZone":"ap-northeast-1a",
+        "ImageId" : "ami-33c25b55",
+        "InstanceType" : "t2.micro",
+        "KeyName" : "udemy-sample",
+        "SubnetId":{"Ref":"kenshou_public_subnet"},
+        "SecurityGroupIds":[{"Ref":"kenshou_SG"}]
+
+          
+        }
+      }
+    }
+  }
